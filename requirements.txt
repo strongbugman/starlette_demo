@@ -1,0 +1,12 @@
+starlette
+sentry-asgi
+uvicorn
+click
+aioredis
+aiocache
+asyncpg
+tortoise-orm
+ipython
+pyyaml
+jinja2
+webargs
