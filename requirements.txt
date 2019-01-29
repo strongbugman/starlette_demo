@@ -9,4 +9,4 @@ tortoise-orm
 ipython
 pyyaml
 jinja2
-webargs
+starchart

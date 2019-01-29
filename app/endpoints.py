@@ -3,7 +3,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from . import models as m
-from .extentions import stagger
+from .extentions import starchart
 
 
 class Cat(HTTPEndpoint):
@@ -68,7 +68,7 @@ class Cats(HTTPEndpoint):
         """
         return JSONResponse(await m.Cat.list())
 
-    @stagger.schema_generator.swagger_from("./docs/cats_post.yml")
+    @starchart.schema_generator.schema_from("./docs/cats_post.yml")
     async def post(self, req: Request):
         data = await req.json()
         cat = await m.Cat.create(**data)

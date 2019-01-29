@@ -4,11 +4,11 @@ from .base import Extension
 from .database import DBExtension
 from .cache import CacheExtension
 from .redis import RedisExtension
-from .stagger import Stagger
+from .starchart import Starchart
 
 db = DBExtension()
 cache = CacheExtension()
 redis = RedisExtension()
-stagger = Stagger()
+starchart = Starchart()
 
-extensions: typing.Set[Extension] = {db, cache, redis, stagger}
+extensions: typing.Set[Extension] = {db, cache, redis, starchart}
