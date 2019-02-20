@@ -17,11 +17,9 @@ async_run = asyncio.get_event_loop().run_until_complete
 
 @contextmanager
 def app_life():
-    handler = app.lifespan_middleware({"type": "lifespan"})
-
-    async_run(handler.startup())
+    async_run(app.router.lifespan.startup())
     yield
-    async_run(handler.shutdown())
+    async_run(app.router.lifespan.shutdown())
 
 
 @click.group()
