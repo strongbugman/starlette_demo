@@ -10,6 +10,6 @@ from .redis import RedisExtension
 db = DBExtension()
 cache = CacheExtension()
 redis = RedisExtension()
-starchart = Starchart(title="Demo")
+starchart = Starchart(title="Demo", openapi_version="2.0")
 
 extensions: typing.Set[Extension] = {db, cache, redis, starchart}

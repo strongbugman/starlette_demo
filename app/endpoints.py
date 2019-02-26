@@ -24,6 +24,23 @@ class Cat(HTTPEndpoint):
               $ref: '#/definitions/Cat'
           404:
             description: Not found
+        definitions:
+          Cat:
+            type: object
+            properties:
+              id:
+                type: integer
+              name:
+                type: string
+              age:
+                type: integer
+          Cats:
+            type: object
+            properties:
+              objects:
+                type: array
+                items:
+                  $ref: "#/definitions/Cat"
        """
         cat = await m.Cat.get(id=int(req.query_params.get("id")))
         return JSONResponse(cat.to_dict())
