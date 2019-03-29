@@ -1,4 +1,5 @@
 import typing
+import logging
 
 from starlette.applications import Starlette
 
@@ -6,6 +7,7 @@ from starlette.applications import Starlette
 class Extension:
     def __init__(self):
         self.app: typing.Optional[Starlette] = None
+        self.logger: logging.Logger = logging.getLogger(self.__class__.__name__)
 
     def register(self, app: Starlette):
         self.app = app

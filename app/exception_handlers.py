@@ -1,6 +1,7 @@
 from starlette.responses import Response
 from starlette.requests import Request
-from tortoise.exceptions import DoesNotExist
+
+from . import exceptoins
 
 
 class Handler:
@@ -11,7 +12,7 @@ class Handler:
 
 
 class NotFoundHandler(Handler):
-    EXC = DoesNotExist
+    EXC = exceptoins.NotFound
 
     def handle(self, req: Request, exc: Exception):
         return Response(status_code=404)

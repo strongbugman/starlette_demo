@@ -16,11 +16,12 @@ def event_loop():
 
 
 @pytest.fixture()
-def app():
-    from manage import app, app_life
+async def app():
+    from manage import app
 
-    with app_life():
-        yield app
+    await app.router.lifespan.startup()
+    yield app
+    await app.router.lifespan.shutdown()
 
 
 @pytest.fixture()
@@ -31,17 +32,20 @@ def client(app):
 @pytest.fixture(autouse=True)
 @pytest.mark.asyncio
 async def db(app):
-    from app.extentions import db
+    from app.extensions import db
+    from app.models import MODELS
 
-    await db.create_tables()
+    for M in MODELS:
+        await db.execute(M.get_db_define())
     yield
-    await db.drop_tables()
+    for M in MODELS:
+        await db.execute(f"DROP TABLE {M.__name__}")
 
 
 @pytest.fixture(autouse=True)
 @pytest.mark.asyncio
 async def cache(app):
-    from app.extentions import cache
+    from app.extensions import cache
 
     await cache.clear()
     yield

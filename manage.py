@@ -8,7 +8,8 @@ import click
 from IPython import embed
 
 from app import create_app
-from app.extentions import db
+from app import models as m
+from app.extensions import db
 
 
 app = create_app()
@@ -51,7 +52,8 @@ def run(port):
 @cmd
 def init_db():
     with app_life():
-        async_run(db.create_tables())
+        for M in m.MODELS:
+            async_run(db.execute(M.get_db_define()))
 
 
 if __name__ == "__main__":

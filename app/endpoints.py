@@ -1,9 +1,11 @@
+from dataclasses import asdict
+
 from starlette.endpoints import HTTPEndpoint
 from starlette.requests import Request
-from starlette.responses import JSONResponse
+from starlette.responses import Response, JSONResponse
 
 from . import models as m
-from .extentions import starchart
+from .extensions import starchart
 
 
 class Cat(HTTPEndpoint):
@@ -42,8 +44,8 @@ class Cat(HTTPEndpoint):
                 items:
                   $ref: "#/definitions/Cat"
        """
-        cat = await m.Cat.get(id=int(req.query_params.get("id")))
-        return JSONResponse(cat.to_dict())
+        cat = await m.Cat.get(int(req.query_params.get("id")))
+        return JSONResponse(asdict(cat))
 
     async def delete(self, req: Request):
         """
@@ -58,14 +60,11 @@ class Cat(HTTPEndpoint):
         responses:
           204:
             description: OK
-            schema:
-              $ref: '#/definitions/Cat'
           404:
             description: Not found
         """
-        cat = await m.Cat.get(id=req.query_params.get("id"))
-        await cat.delete()
-        return JSONResponse(cat.to_dict())
+        await m.Cat.delete(int(req.query_params.get("id")))
+        return Response(status_code=204)
 
 
 class Cats(HTTPEndpoint):
@@ -83,10 +82,11 @@ class Cats(HTTPEndpoint):
           200:
             description: OK
         """
-        return JSONResponse(await m.Cat.list())
+        return JSONResponse([asdict(cat) for cat in await m.Cat.list()])
 
     @starchart.schema_generator.schema_from("./docs/cats_post.yml")
     async def post(self, req: Request):
         data = await req.json()
-        cat = await m.Cat.create(**data)
-        return JSONResponse(cat.to_dict())
+        cat = m.Cat(**data)
+        await cat.save()
+        return JSONResponse(asdict(cat))

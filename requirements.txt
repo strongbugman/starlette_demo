@@ -10,3 +10,4 @@ ipython
 pyyaml
 jinja2
 starchart
+ujson

@@ -2,7 +2,7 @@ from starlette.applications import Starlette
 
 import settings
 from .routes import routes
-from .extentions import extensions
+from .extensions import extensions
 from .exception_handlers import handlers
 from .middleware import middleware
 

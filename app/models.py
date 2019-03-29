@@ -1,27 +1,55 @@
-from tortoise.models import Model
-from tortoise import fields
-from tortoise.queryset import QuerySet
+import typing
+from dataclasses import dataclass, asdict
 
-from . import extentions as exts
+from app import extensions as exts
 
 
-class Cat(Model):
-    id = fields.IntField(pk=True)
-    name = fields.CharField(max_length=10)
-    age = fields.SmallIntField(default=0)
-
-    @classmethod
-    async def count(cls):
-        return await QuerySet(cls).count()
+@dataclass
+class Cat:
+    name: str
+    id: int = 0
+    age: int = 0
 
     @classmethod
-    @exts.cache.cached(ttl=60)
-    async def list(cls):
-        cats = []
-        async for cat in cls.all():
-            cats.append(cat.to_dict())
+    def get_db_define(cls) -> str:
+        return f"""
+        CREATE TABLE {cls.__name__} (
+            id      serial PRIMARY KEY,
+            name    varchar(32) DEFAULT '',
+            age     integer DEFAULT 0
+        );
+        """
 
-        return cats
+    async def save(self) -> None:
+        data = asdict(self)
+        data.pop("id")
 
-    def to_dict(self):
-        return {"id": self.id, "name": self.name, "age": self.age}
+        if self.id != 0:
+            await exts.db.update(self.__class__.__name__, data, id=self.id)
+        self.id = await exts.db.insert(self.__class__.__name__, data)
+
+    @classmethod
+    async def get(cls, _id) -> "Cat":
+        result = (
+            await exts.db.fetch(
+                f"SELECT {','.join(cls.__annotations__.keys())} FROM cat WHERE id = {exts.db.parse(_id)};"
+            )
+        )[0]
+        return cls(**result)
+
+    @classmethod
+    async def delete(cls, _id) -> None:
+        await exts.db.execute(
+            f"DELETE FROM {cls.__name__} WHERE id = {exts.db.parse(_id)};"
+        )
+
+    @classmethod
+    @exts.cache.cached()
+    async def list(cls) -> typing.List["Cat"]:
+        results = await exts.db.fetch(
+            f"SELECT {','.join(cls.__annotations__.keys())} FROM cat"
+        )
+        return [cls(**result) for result in results]
+
+
+MODELS = {Cat}

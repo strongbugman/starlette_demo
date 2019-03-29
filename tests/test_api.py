@@ -1,7 +1,7 @@
 from starlette.testclient import TestClient
 
 
-def test_cat(client: TestClient):
+def test_cat(client: TestClient, db, cache):
     data = dict(name="当当", age=2)
 
     res = client.post("/cats", json=data)
@@ -19,8 +19,7 @@ def test_cat(client: TestClient):
         assert res.json()[0][k] == v
 
     res = client.delete("/cat", params=dict(id=cat_id))
-    for k, v in data.items():
-        assert res.json()[k] == v
+    assert res.status_code == 204
 
     res = client.get("/cat", params=dict(id=cat_id))
     assert res.status_code == 404
