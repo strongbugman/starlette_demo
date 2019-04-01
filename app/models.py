@@ -26,7 +26,8 @@ class Cat(BaseModel):
 
         if self.id != 0:
             await exts.db.update(self.__class__.__name__, data, id=self.id)
-        self.id = await exts.db.insert(self.__class__.__name__, data)
+        else:
+            self.id = await exts.db.insert(self.__class__.__name__, data)
 
     @classmethod
     async def get(cls, _id) -> "Cat":

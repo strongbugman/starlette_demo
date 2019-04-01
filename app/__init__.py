@@ -36,7 +36,9 @@ def create_app():
                     "objects": {
                         "type": "array",
                         "items": {"$ref": f"#/components/schemas/{M.__name__}"},
-                    }
+                    },
+                    "page": {"type": "integer"},
+                    "count": {"type": "integer"},
                 },
             },
         )
