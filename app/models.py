@@ -45,9 +45,10 @@ class Cat(BaseModel):
 
     @classmethod
     @exts.cache.cached()
-    async def list(cls) -> typing.List["Cat"]:
+    async def list(cls, page=1, count=20) -> typing.List["Cat"]:
         results = await exts.db.fetch(
-            f"SELECT {','.join(cls.__annotations__.keys())} FROM cat"
+            f"SELECT {','.join(cls.__annotations__.keys())} FROM {cls.__name__} ORDER BY id ASC "
+            f"LIMIT {count} OFFSET {(page - 1) * count}"
         )
         return [cls(**result) for result in results]
 

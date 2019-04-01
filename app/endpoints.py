@@ -59,16 +59,30 @@ class Cats(HTTPEndpoint):
         tags:
         - cats
         parameters:
-        - name: id
+        - name: page
           in: query
-          required: True
+          required: False
           schema:
             type: integer
+            default: 1
+            minimum: 1
+        - name: count
+          in: query
+          required: False
+          schema:
+            type: integer
+            default: 20
+            maximum: 40
+            minimum: 1
         responses:
           "200":
             description: OK
         """
-        return JSONResponse([cat.dict() for cat in await m.Cat.list()])
+        cats = await m.Cat.list(
+            page=req.query_params.get("page", 1),
+            count=req.query_params.get("count", 20),
+        )
+        return JSONResponse([cat.dict() for cat in cats])
 
     @starchart.schema_generator.schema_from("./docs/cats_post.yml")
     async def post(self, req: Request):

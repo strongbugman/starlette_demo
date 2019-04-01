@@ -12,7 +12,7 @@ Field = typing.Union[int, float, bool, str, None]
 
 
 class DBExtension(Extension):
-    INSERT_SQL = "INSERT INTO {table:s} ({columns:s}) VALUES ({values:s});"
+    INSERT_SQL = "INSERT INTO {table:s} ({columns:s}) VALUES ({values:s}) RETURNING id;"
     UPDATE_SQL = "UPDATE {table:s} SET {data:s} WHERE {condition:s};"
     INJECTION_CHARS = ("'", '"', "`", "\\")
 
@@ -67,7 +67,7 @@ class DBExtension(Extension):
             columns=", ".join(list(keys)),
             values=", ".join([f"{self.parse(value)}" for value in values]),
         )
-        return int((await self.execute(sql)).split(" ")[-1])
+        return (await self.fetch(sql))[0]["id"]
 
     async def update(
         self, table: str, data: typing.Dict[str, Field], **condition: Field
