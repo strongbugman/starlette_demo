@@ -1,4 +1,12 @@
 from starlette.testclient import TestClient
+from starlette.applications import Starlette
+from openapi_spec_validator import validate_v3_spec
+
+from app.extensions import starchart
+
+
+def test_schema(app: Starlette):
+    validate_v3_spec(starchart.schema_generator.get_schema(app.routes))
 
 
 def test_cat(client: TestClient, db, cache):

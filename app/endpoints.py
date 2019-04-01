@@ -1,5 +1,3 @@
-from dataclasses import asdict
-
 from starlette.endpoints import HTTPEndpoint
 from starlette.requests import Request
 from starlette.responses import Response, JSONResponse
@@ -16,36 +14,30 @@ class Cat(HTTPEndpoint):
         - cat
         parameters:
         - name: id
-          type: integer
           in: query
           required: True
+          schema:
+            type: integer
         responses:
-          200:
+          "200":
             description: OK
-            schema:
-              $ref: '#/definitions/Cat'
-          404:
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Cat'
+          "404":
             description: Not found
-        definitions:
-          Cat:
-            type: object
-            properties:
-              id:
-                type: integer
-              name:
-                type: string
-              age:
-                type: integer
+        schemas:
           Cats:
             type: object
             properties:
               objects:
                 type: array
                 items:
-                  $ref: "#/definitions/Cat"
+                  $ref: "#/components/schemas/Cat"
        """
         cat = await m.Cat.get(int(req.query_params.get("id")))
-        return JSONResponse(asdict(cat))
+        return JSONResponse(cat.dict())
 
     async def delete(self, req: Request):
         """
@@ -54,13 +46,14 @@ class Cat(HTTPEndpoint):
         - cat
         parameters:
         - name: id
-          type: integer
           in: query
           required: True
+          schema:
+            type: integer
         responses:
-          204:
+          "204":
             description: OK
-          404:
+          "404":
             description: Not found
         """
         await m.Cat.delete(int(req.query_params.get("id")))
@@ -75,18 +68,19 @@ class Cats(HTTPEndpoint):
         - cats
         parameters:
         - name: id
-          type: integer
           in: query
           required: True
+          schema:
+            type: integer
         responses:
-          200:
+          "200":
             description: OK
         """
-        return JSONResponse([asdict(cat) for cat in await m.Cat.list()])
+        return JSONResponse([cat.dict() for cat in await m.Cat.list()])
 
     @starchart.schema_generator.schema_from("./docs/cats_post.yml")
     async def post(self, req: Request):
         data = await req.json()
         cat = m.Cat(**data)
         await cat.save()
-        return JSONResponse(asdict(cat))
+        return JSONResponse(cat.dict())

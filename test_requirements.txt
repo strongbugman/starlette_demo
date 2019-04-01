@@ -2,3 +2,4 @@ pytest
 pytest-cov
 pytest-asyncio
 requests
+openapi_spec_validator>=0.2.4

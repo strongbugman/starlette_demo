@@ -17,7 +17,9 @@ parameters:
       age:
         type: integer
 responses:
-  201:
+  "201":
     description: OK
-    schema:
-      $ref: '#/definitions/Cat'
+    content:
+      application/json:
+        schema:
+          $ref: '#/components/schemas/Cat'

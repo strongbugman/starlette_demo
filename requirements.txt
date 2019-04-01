@@ -11,3 +11,4 @@ pyyaml
 jinja2
 starchart
 ujson
+pydantic

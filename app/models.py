@@ -1,11 +1,11 @@
 import typing
-from dataclasses import dataclass, asdict
 
-from app import extensions as exts
+from pydantic import BaseModel
+
+from . import extensions as exts
 
 
-@dataclass
-class Cat:
+class Cat(BaseModel):
     name: str
     id: int = 0
     age: int = 0
@@ -21,7 +21,7 @@ class Cat:
         """
 
     async def save(self) -> None:
-        data = asdict(self)
+        data = self.dict()
         data.pop("id")
 
         if self.id != 0:
