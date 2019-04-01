@@ -18,4 +18,4 @@ class NotFoundHandler(Handler):
         return Response(status_code=404)
 
 
-handlers = {NotFoundHandler()}
+HANDLERS = {NotFoundHandler()}

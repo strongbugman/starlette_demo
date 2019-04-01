@@ -27,14 +27,6 @@ class Cat(HTTPEndpoint):
                   $ref: '#/components/schemas/Cat'
           "404":
             description: Not found
-        schemas:
-          Cats:
-            type: object
-            properties:
-              objects:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Cat"
        """
         cat = await m.Cat.get(int(req.query_params.get("id")))
         return JSONResponse(cat.dict())

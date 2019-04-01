@@ -50,7 +50,7 @@ def run(port):
 
 
 @cmd
-def init_db():
+def create_tables():
     with app_life():
         for M in m.MODELS:
             async_run(db.execute(M.get_db_define()))

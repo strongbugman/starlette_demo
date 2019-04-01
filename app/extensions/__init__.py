@@ -12,4 +12,4 @@ cache = CacheExtension()
 redis = RedisExtension()
 starchart = Starchart(title="Demo")
 
-extensions: typing.Set[Extension] = {db, cache, redis, starchart}
+EXTENSIONS: typing.Set[Extension] = {db, cache, redis, starchart}
