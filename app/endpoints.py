@@ -128,7 +128,7 @@ class Cats(HTTPEndpoint):
         cats = await m.Cat.list(page=page, count=count)
 
         return JSONResponse(
-            {"objects": [cat.dict() for cat in cats], "page": page, "count": count}
+            {"objects": [cat.dict() for cat in cats], "page": page, "count": len(cats)}
         )
 
     @starchart.schema_generator.schema_from("./docs/cats_post.yml")
