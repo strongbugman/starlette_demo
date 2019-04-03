@@ -1,12 +1,32 @@
 import typing
 
-from pydantic import BaseModel as _BaseModel
+from pydantic import BaseModel as _BaseModel, ValidationError
+from pydantic.error_wrappers import ErrorWrapper
 
 from . import extensions as exts
 
 
 class BaseModel(_BaseModel):
     id: int = 0
+
+    def __init__(self, **data: typing.Any):
+        super().__init__(**data)
+
+        self.validate_all()
+
+    def validate_all(self):
+        errors = self.get_validate_errors()
+        if errors:
+            raise ValidationError(
+                [ErrorWrapper(ValueError(e), loc=f) for f, e in errors.items()]
+            )
+
+    def get_validate_errors(self) -> typing.Dict[str, str]:
+        errors: typing.Dict[str, str] = {}
+        if self.id < 0:
+            errors["id"] = "small than zero!"
+
+        return errors
 
     @classmethod
     def get_db_define(cls) -> str:
@@ -17,6 +37,8 @@ class BaseModel(_BaseModel):
         """
 
     async def save(self) -> None:
+        self.validate_all()
+
         data = self.dict()
         data.pop("id")
 
@@ -53,6 +75,15 @@ class BaseModel(_BaseModel):
 class Cat(BaseModel):
     name: str
     age: int = 0
+
+    def get_validate_errors(self) -> typing.Dict[str, str]:
+        errors = super().get_validate_errors()
+
+        if self.age < 0:
+            errors["age"] = "small than zero!"
+        if len(self.name) > 32:
+            errors["name"] = "length is too long!(Limit to 32)"
+        return errors
 
     @classmethod
     def get_db_define(cls) -> str:

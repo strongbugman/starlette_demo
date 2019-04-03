@@ -1,21 +1,13 @@
 summary: Create one cat
 tags:
 - cats
-parameters:
-- name: Cat
-  in: body
-  schema:
-    type: object
-    required:
-    - name
-    - age
-    properties:
-      name:
-        type: string
-        maxLength: 31
-        description: naming cat
-      age:
-        type: integer
+requestBody:
+  description: Field `id` will be ignored!
+  required: true
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/Cat'
 responses:
   "201":
     description: OK

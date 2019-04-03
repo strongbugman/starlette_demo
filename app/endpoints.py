@@ -4,6 +4,7 @@ from starlette.responses import Response, JSONResponse
 
 from . import models as m
 from .extensions import starchart
+from . import utils
 
 
 class Cat(HTTPEndpoint):
@@ -28,7 +29,7 @@ class Cat(HTTPEndpoint):
           "404":
             description: Not found
        """
-        cat = await m.Cat.get(int(req.query_params.get("id")))
+        cat = await m.Cat.get(utils.parse_id(req.query_params.get("id")))
         return JSONResponse(cat.dict())
 
     async def put(self, req: Request):
@@ -36,25 +37,24 @@ class Cat(HTTPEndpoint):
         summary: Update single cat
         tags:
         - cat
-        parameters:
-        - name: Cat
-          in: body
-          schema:
-            type: object
-            required:
-            - name
-            - age
-            - id
-            properties:
-              name:
-                type: string
-                maxLength: 31
-                description: naming cat
-              age:
-                type: integer
-              id:
-                type: integer
-                minimum: 1
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - id
+                properties:
+                  name:
+                    type: string
+                    maxLength: 32
+                    description: naming cat
+                  age:
+                    type: integer
+                  id:
+                    type: integer
+                    minimum: 1
         responses:
           "201":
             description: OK
@@ -65,11 +65,11 @@ class Cat(HTTPEndpoint):
           "404":
             description: Not found
        """
-        data = await req.json()
+        data = await utils.get_json(req)
 
-        cat = await m.Cat.get(int(data.pop("id")))
-        cat.name = data["name"]
-        cat.age = data["age"]
+        cat = await m.Cat.get(utils.parse_id(data.get("id")))
+        cat.name = data.get("name", cat.name)
+        cat.age = data.get("age", cat.age)
         await cat.save()
         return JSONResponse(cat.dict())
 
@@ -124,8 +124,7 @@ class Cats(HTTPEndpoint):
                 schema:
                   $ref: '#/components/schemas/Cats'
         """
-        page = req.query_params.get("page", 1)
-        count = req.query_params.get("count", 20)
+        page, count = utils.parse_paginate(req)
         cats = await m.Cat.list(page=page, count=count)
 
         return JSONResponse(
@@ -134,7 +133,9 @@ class Cats(HTTPEndpoint):
 
     @starchart.schema_generator.schema_from("./docs/cats_post.yml")
     async def post(self, req: Request):
-        data = await req.json()
+        data = await utils.get_json(req)
+
         cat = m.Cat(**data)
+        cat.id = 0
         await cat.save()
         return JSONResponse(cat.dict())

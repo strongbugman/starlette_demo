@@ -5,7 +5,7 @@ from asyncpg.pool import Pool
 
 import settings
 from .base import Extension
-from .. import exceptoins
+from .. import exceptions
 
 
 Field = typing.Union[int, float, bool, str, None]
@@ -56,7 +56,7 @@ class DBExtension(Extension):
             self.logger.debug(f"Result ```{result}````")
 
         if not result:
-            raise exceptoins.NotFound("Not found in PG!")
+            raise exceptions.NotFound("Not found in PG!")
         return result
 
     async def insert(self, table: str, data: typing.Dict[str, Field]) -> int:
