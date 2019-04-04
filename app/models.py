@@ -14,7 +14,7 @@ class BaseModel(_BaseModel):
 
         self.validate_all()
 
-    def validate_all(self):
+    def validate_all(self) -> None:
         errors = self.get_validate_errors()
         if errors:
             raise ValidationError(

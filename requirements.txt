@@ -5,10 +5,12 @@ click
 aioredis
 aiocache
 asyncpg
-tortoise-orm
+aio-pika
 ipython
 pyyaml
 jinja2
 starchart
-ujson
 pydantic
+ujson
+msgpack
+ant_nest

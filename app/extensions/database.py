@@ -19,7 +19,7 @@ class DBExtension(Extension):
     pool: typing.Optional[Pool]
 
     async def startup(self):
-        self.pool = await create_pool(dsn=settings.DB_URL)
+        self.pool = await create_pool(dsn=settings.DB_URL, timeout=1)
 
     async def shutdown(self):
         await self.pool.close()

@@ -1,3 +1,5 @@
+from importlib import import_module
+
 from starlette.applications import Starlette
 
 import settings
@@ -42,5 +44,7 @@ def create_app():
                 },
             },
         )
+
+    import_module("app.tasks")
 
     return app
