@@ -1,5 +1,6 @@
 import os
 import logging
+import typing
 
 
 DEBUG = os.getenv("DEBUG", "")
@@ -16,7 +17,7 @@ DSN = ""
 DB_URL = "postgres://postgres:letmein@localhost:5432/" + PROJECT_NAME
 REDIS_URL = "redis://localhost"
 CACHE_BACKEND = "memory"
-CACHE_KWARGS = {}
+CACHE_KWARGS: typing.Dict[str, typing.Any] = {}
 AMQP_URL = "amqp://rabbit:letmein@localhost:5672"
 AMQP_EXCHANGE = PROJECT_NAME + "_default"
 AMQP_ROUTING_KEY = PROJECT_NAME + "_default"

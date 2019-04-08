@@ -1,6 +1,6 @@
 from starlette.endpoints import HTTPEndpoint
 from starlette.requests import Request
-from starlette.responses import Response, JSONResponse
+from starlette.responses import Response
 
 from . import models as m
 from .extensions import starchart
@@ -30,7 +30,7 @@ class Cat(HTTPEndpoint):
             description: Not found
        """
         cat = await m.Cat.get(utils.parse_id(req.query_params.get("id")))
-        return JSONResponse(cat.dict())
+        return utils.JSONResponse(cat.dict())
 
     async def put(self, req: Request):
         """
@@ -71,7 +71,7 @@ class Cat(HTTPEndpoint):
         cat.name = data.get("name", cat.name)
         cat.age = data.get("age", cat.age)
         await cat.save()
-        return JSONResponse(cat.dict())
+        return utils.JSONResponse(cat.dict())
 
     async def delete(self, req: Request):
         """
@@ -127,7 +127,7 @@ class Cats(HTTPEndpoint):
         page, count = utils.parse_paginate(req)
         cats = await m.Cat.list(page=page, count=count)
 
-        return JSONResponse(
+        return utils.JSONResponse(
             {"objects": [cat.dict() for cat in cats], "page": page, "count": len(cats)}
         )
 
@@ -138,4 +138,4 @@ class Cats(HTTPEndpoint):
         cat = m.Cat(**data)
         cat.id = 0
         await cat.save()
-        return JSONResponse(cat.dict())
+        return utils.JSONResponse(cat.dict())

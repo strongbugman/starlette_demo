@@ -1,7 +1,10 @@
 import typing
 from json import JSONDecodeError
+import enum
 
 from starlette.requests import Request
+from starlette.responses import JSONResponse as _JSONResponse
+import ujson
 
 from . import exceptions
 
@@ -12,8 +15,14 @@ def get_sign(func: typing.Callable, *args, **kwargs) -> str:
 
 async def get_json(req: Request) -> typing.Dict:
     try:
-        return await req.json()
-    except JSONDecodeError as e:
+        json = getattr(req, "_json", None)
+        if json:
+            return json
+        else:
+            json = ujson.loads(await req.body())
+            setattr(req, "_json", json)
+            return json
+    except (JSONDecodeError, ValueError) as e:
         raise exceptions.InvalidJson(str(e)) from e
 
 
@@ -28,12 +37,15 @@ def parse_integer(num: typing.Union[str, int]) -> int:
 
 
 def parse_id(_id: typing.Union[str, int, None]) -> int:
+    if not _id:
+        raise exceptions.InvalidId("Miss fields!")
+
     _id = parse_integer(_id)
 
-    if not _id or _id < 0:
+    if _id < 0:
         raise exceptions.InvalidId("Filed small than zero!")
-
-    return _id
+    else:
+        return _id
 
 
 def parse_paginate(req: Request):
@@ -44,3 +56,11 @@ def parse_paginate(req: Request):
         raise exceptions.InvalidException("Field is bigger than 40")
 
     return page, count
+
+
+class JSONResponse(_JSONResponse):
+    def render(self, content: typing.Dict) -> bytes:
+        for k in content.keys():
+            if isinstance(content[k], enum.Enum):
+                content[k] = content[k].name
+        return ujson.dumps(content, ensure_ascii=False).encode("utf-8")

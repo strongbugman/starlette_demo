@@ -8,6 +8,7 @@ from uvicorn import run as _run
 import click
 from IPython import embed
 
+
 from app import create_app
 from app import models as m
 from app.extensions import db, task
@@ -19,9 +20,9 @@ async_run = asyncio.get_event_loop().run_until_complete
 
 @contextmanager
 def app_life():
-    async_run(app.router.lifespan.startup())
+    async_run(app.startup())
     yield
-    async_run(app.router.lifespan.shutdown())
+    async_run(app.shutdown())
 
 
 @click.group()
@@ -39,9 +40,9 @@ def cmd(func):
 
 @cmd
 def shell():
-    ctx = {"app": app, "async_run": async_run}
+    ctx = {"app": app}
     with app_life():
-        embed(user_ns=ctx)
+        embed(user_ns=ctx, using="asyncio")
 
 
 @cmd
@@ -68,7 +69,7 @@ def task_consume():
 def create_tables():
     with app_life():
         for M in m.MODELS:
-            async_run(db.execute(M.get_db_define()))
+            async_run(db.create_table(M.__name__, M.__db_define__))
 
 
 if __name__ == "__main__":

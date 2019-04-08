@@ -19,9 +19,9 @@ def event_loop():
 async def app():
     from manage import app
 
-    await app.router.lifespan.startup()
+    await app.startup()
     yield app
-    await app.router.lifespan.shutdown()
+    await app.shutdown()
 
 
 @pytest.fixture()
@@ -36,7 +36,7 @@ async def db(app):
     from app.models import MODELS
 
     for M in MODELS:
-        await db.execute(M.get_db_define())
+        await db.create_table(M.__name__, M.__db_define__)
     yield
     for M in MODELS:
         await db.execute(f"DROP TABLE {M.__name__}")

@@ -35,6 +35,7 @@ class Task:
         if settings.ENV == "testing":
             await self.execute(*args, **kwargs)
         else:
+            assert self.ext.exchange
             await self.ext.exchange.publish(
                 Message(dumps([args, kwargs]), headers={"name": self.name}),
                 settings.AMQP_ROUTING_KEY,
@@ -66,7 +67,7 @@ class TaskExtension(Extension):
         await self.queue.bind(self.exchange, settings.AMQP_ROUTING_KEY, timeout=1)
 
     async def shutdown(self):
-        await self.ant.wait_scheduled_coroutines()
+        await self.ant.wait_scheduled_tasks()
         await self.channel.close()
         await self.connection.close()
 
@@ -79,13 +80,18 @@ class TaskExtension(Extension):
 
     async def consume(self, msg: IncomingMessage):
         args, kwargs = loads(msg.body)
-        task = self.tasks[msg.headers["name"]]
-        try:
-            await task.execute(*args, *kwargs)
-            await msg.ack()
-        except Extension:
-            self.logger.exception("Error on task consuming!")
-            await msg.reject()
+        task_name = msg.headers["name"]
+        if task_name not in self.tasks:
+            self.logger.exception(f"Task {task_name} is not declared!")
+            await msg.reject(requeue=True)
+        else:
+            task = self.tasks[msg.headers["name"]]
+            try:
+                await task.execute(*args, *kwargs)
+                await msg.ack()
+            except Exception:
+                self.logger.exception("Error on task consuming!")
+                await msg.reject()
 
     async def consume_all(self):
         while not self.closed:
@@ -95,5 +101,5 @@ class TaskExtension(Extension):
                 continue
 
             if msg:
-                self.ant.schedule_coroutine(self.consume(msg))
+                self.ant.schedule_task(self.consume(msg))
             await sleep(5)

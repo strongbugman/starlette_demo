@@ -9,8 +9,9 @@ prepare_test_env:
 	docker exec -ti test_postgres su postgres -c "createdb startlette_demo"
 
 test:
-	black .
+	black . --check
 	flake8 app tests
+	mypy --ignore-missing-imports app
 	pytest
 
 destroy_test_env:

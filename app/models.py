@@ -1,4 +1,5 @@
 import typing
+from datetime import datetime
 
 from pydantic import BaseModel as _BaseModel, ValidationError
 from pydantic.error_wrappers import ErrorWrapper
@@ -6,8 +7,22 @@ from pydantic.error_wrappers import ErrorWrapper
 from . import extensions as exts
 
 
+M = typing.TypeVar("M", bound="BaseModel")
+
+
 class BaseModel(_BaseModel):
+    __db_define__ = f"""
+CREATE TABLE base (
+    id      serial PRIMARY KEY NOT NULL,
+    created_at timestamp  NOT NULL  DEFAULT current_timestamp,
+    updated_at timestamp  NOT NULL  DEFAULT current_timestamp
+);
+"""
+    __upsert_columns__ = ""
+
     id: int = 0
+    created_at: typing.Optional[datetime] = None
+    updated_at: typing.Optional[datetime] = None
 
     def __init__(self, **data: typing.Any):
         super().__init__(**data)
@@ -28,27 +43,22 @@ class BaseModel(_BaseModel):
 
         return errors
 
-    @classmethod
-    def get_db_define(cls) -> str:
-        return f"""
-        CREATE TABLE {cls.__name__} (
-            id      serial PRIMARY KEY,
-        );
-        """
-
-    async def save(self) -> None:
+    async def save(self, upsert=False) -> None:
         self.validate_all()
 
-        data = self.dict()
-        data.pop("id")
+        data = self.dict(exclude={"created_at", "updated_at", "id"})
 
-        if self.id != 0:
-            await exts.db.update(self.__class__.__name__, data, id=self.id)
+        if upsert:
+            assert self.id == 0
+            await exts.db.upsert(self.__class__.__name__, data, self.__upsert_columns__)
         else:
-            self.id = await exts.db.insert(self.__class__.__name__, data)
+            if self.id != 0:
+                await exts.db.update(self.__class__.__name__, data, id=self.id)
+            else:
+                self.id = await exts.db.insert(self.__class__.__name__, data)
 
     @classmethod
-    async def get(cls, _id: int) -> "BaseModel":
+    async def get(cls: typing.Type[M], _id: int) -> M:
         result = (
             await exts.db.fetch(
                 f"SELECT {','.join(cls.__fields__.keys())} FROM {cls.__name__} WHERE id = {exts.db.parse(_id)};"
@@ -64,7 +74,9 @@ class BaseModel(_BaseModel):
 
     @classmethod
     @exts.cache.cached()
-    async def list(cls, page: int = 1, count: int = 20) -> typing.List["BaseModel"]:
+    async def list(
+        cls: typing.Type[M], page: int = 1, count: int = 20
+    ) -> typing.List[M]:
         results = await exts.db.fetch(
             f"SELECT {','.join(cls.__fields__.keys())} FROM {cls.__name__} ORDER BY id ASC "
             f"LIMIT {count} OFFSET {(page - 1) * count}"
@@ -73,6 +85,16 @@ class BaseModel(_BaseModel):
 
 
 class Cat(BaseModel):
+    __db_define__ = """
+CREATE TABLE cat (
+    id      serial PRIMARY KEY NOT NULL,
+    name    varchar(32) DEFAULT '' NOT NULL,
+    age     integer DEFAULT 0 NOT NULL,
+    created_at timestamp  NOT NULL  DEFAULT current_timestamp,
+    updated_at timestamp  NOT NULL  DEFAULT current_timestamp
+);
+"""
+
     name: str
     age: int = 0
 
@@ -85,15 +107,23 @@ class Cat(BaseModel):
             errors["name"] = "length is too long!(Limit to 32)"
         return errors
 
-    @classmethod
-    def get_db_define(cls) -> str:
-        return f"""
-        CREATE TABLE {cls.__name__} (
-            id      serial PRIMARY KEY,
-            name    varchar(32) DEFAULT '',
-            age     integer DEFAULT 0
-        );
-        """
-
 
 MODELS = {Cat}
+
+
+for m_cls in MODELS:
+    exts.starchart.schema_generator.add_schema(m_cls.__name__, m_cls.schema())
+    exts.starchart.schema_generator.add_schema(
+        f"{m_cls.__name__}s",
+        {
+            "type": "object",
+            "properties": {
+                "objects": {
+                    "type": "array",
+                    "items": {"$ref": f"#/components/schemas/{m_cls.__name__}"},
+                },
+                "page": {"type": "integer"},
+                "count": {"type": "integer"},
+            },
+        },
+    )

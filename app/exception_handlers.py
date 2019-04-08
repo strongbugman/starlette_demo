@@ -1,3 +1,5 @@
+import typing
+
 from starlette.responses import Response, JSONResponse
 from starlette.requests import Request
 from pydantic import ValidationError
@@ -6,7 +8,7 @@ from . import exceptions
 
 
 class Handler:
-    EXC = Exception
+    EXC: typing.Type[Exception] = Exception
 
     def handle(self, req: Request, exc: Exception) -> Response:
         return Response(status_code=400)
@@ -22,21 +24,21 @@ class Handler:
 class NotFoundHandler(Handler):
     EXC = exceptions.NotFound
 
-    def handle(self, req: Request, exc: exceptions.NotFound) -> Response:
+    def handle(self, req: Request, exc: Exception) -> Response:
         return Response("Resource not found", status_code=404)
 
 
 class ValidationErrorHandler(Handler):
     EXC = ValidationError
 
-    def handle(self, req: Request, exc: ValidationError) -> JSONResponse:
+    def handle(self, req: Request, exc: Exception) -> JSONResponse:
         return self.error_response(exc)
 
 
 class InvalidHandler(Handler):
     EXC = exceptions.InvalidException
 
-    def handle(self, req: Request, exc: exceptions.InvalidException) -> JSONResponse:
+    def handle(self, req: Request, exc: Exception) -> JSONResponse:
         return self.error_response(exc)
 
 
