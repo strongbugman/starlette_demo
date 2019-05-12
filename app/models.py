@@ -7,17 +7,16 @@ from pydantic.error_wrappers import ErrorWrapper
 from . import extensions as exts
 
 
-M = typing.TypeVar("M", bound="BaseModel")
+M = typing.TypeVar("M", bound="Base")
 
 
-class BaseModel(_BaseModel):
-    __db_define__ = f"""
+class Base(_BaseModel):
+    __db_define__ = """
 CREATE TABLE base (
     id      serial PRIMARY KEY NOT NULL,
     created_at timestamp  NOT NULL  DEFAULT current_timestamp,
     updated_at timestamp  NOT NULL  DEFAULT current_timestamp
-);
-"""
+);"""
     __upsert_columns__ = ""
 
     id: int = 0
@@ -61,16 +60,15 @@ CREATE TABLE base (
     async def get(cls: typing.Type[M], _id: int) -> M:
         result = (
             await exts.db.fetch(
-                f"SELECT {','.join(cls.__fields__.keys())} FROM {cls.__name__} WHERE id = {exts.db.parse(_id)};"
+                f"SELECT {','.join(cls.__fields__.keys())} FROM {cls.__name__} WHERE id = $1;",
+                _id,
             )
         )[0]
         return cls(**result)
 
     @classmethod
     async def delete(cls, _id: int) -> None:
-        await exts.db.execute(
-            f"DELETE FROM {cls.__name__} WHERE id = {exts.db.parse(_id)};"
-        )
+        await exts.db.execute(f"DELETE FROM {cls.__name__} WHERE id = $1;", _id)
 
     @classmethod
     @exts.cache.cached()
@@ -79,12 +77,14 @@ CREATE TABLE base (
     ) -> typing.List[M]:
         results = await exts.db.fetch(
             f"SELECT {','.join(cls.__fields__.keys())} FROM {cls.__name__} ORDER BY id ASC "
-            f"LIMIT {count} OFFSET {(page - 1) * count}"
+            f"LIMIT $1 OFFSET $2",
+            count,
+            (page - 1) * count,
         )
         return [cls(**result) for result in results]
 
 
-class Cat(BaseModel):
+class Cat(Base):
     __db_define__ = """
 CREATE TABLE cat (
     id      serial PRIMARY KEY NOT NULL,
@@ -92,8 +92,7 @@ CREATE TABLE cat (
     age     integer DEFAULT 0 NOT NULL,
     created_at timestamp  NOT NULL  DEFAULT current_timestamp,
     updated_at timestamp  NOT NULL  DEFAULT current_timestamp
-);
-"""
+);"""
 
     name: str
     age: int = 0

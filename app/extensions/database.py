@@ -1,5 +1,4 @@
 import typing
-import enum
 
 from asyncpg import create_pool, Record
 from asyncpg.pool import Pool
@@ -9,111 +8,76 @@ from .base import Extension
 from .. import exceptions
 
 
-Field = typing.Union[int, float, bool, str, None]
-
-
 class DBExtension(Extension):
-    INSERT_SQL = "INSERT INTO {table:s} ({columns:s}) VALUES ({values:s}) RETURNING id;"
-    UPDATE_SQL = "UPDATE {table:s} SET {data:s} WHERE {condition:s};"
-    UPSERT_SQL = "INSERT INTO {table:s} ({columns:s}) VALUES ({values:s}) ON CONFLICT ({upsert_columns:s}) DO UPDATE set {pairs:s};"
-    INJECTION_CHARS = ("'", '"', "`", "\\")
-    UPDATE_ROW_UPDATED_AT_FUNCTION = """
-    CREATE OR REPLACE FUNCTION update_row_updated_at()
-    RETURNS TRIGGER AS $$
-    BEGIN
-        NEW.updated_at = now();
-        RETURN NEW;
-    END;
-    $$ language 'plpgsql';"""
-    UPDATE_ROW_UPDATED_AT_TRIGGER = """
-    CREATE TRIGGER update_row_updated_at BEFORE UPDATE ON {table:s} FOR EACH ROW EXECUTE PROCEDURE  update_row_updated_at();"""
-
     pool: typing.Optional[Pool]
 
     async def startup(self):
         self.pool = await create_pool(dsn=settings.DB_URL, timeout=1)
-        await self.execute(self.UPDATE_ROW_UPDATED_AT_FUNCTION)
+        await self.execute(
+            "CREATE OR REPLACE FUNCTION update_row_updated_at() RETURNS TRIGGER AS $$ BEGIN NEW.updated_at = now(); RETURN NEW; END; $$ language 'plpgsql';"
+        )
 
     async def shutdown(self):
         await self.pool.close()
 
-    @classmethod
-    def parse(cls, value: Field) -> str:
-        """Parse value to str for making sql string, eg: False -> '0'
-        :return: str
-        """
-        if isinstance(value, bool):
-            return "1" if value else "0"
-        elif isinstance(value, str):
-            for c in cls.INJECTION_CHARS:
-                value = value.replace(c, "\\" + c)
-            return "'{:s}'".format(value)
-        elif value is None:
-            return "NULL"
-        elif isinstance(value, enum.IntEnum):
-            return str(value.value)
-        elif isinstance(value, (int, float)):
-            return str(value)
-        elif isinstance(value, typing.Sequence):
-            return f"'{{{','.join(cls.parse(v) for v in value)}}}'"
-        else:
-            raise ValueError(f"Value {value.__class__}-{value} is not support!")
+    @staticmethod
+    def numbsers():
+        i = 1
+        while True:
+            yield i
+            i += 1
 
-    async def execute(self, sql: str) -> str:
+    async def execute(self, sql: str, *params: typing.Any) -> str:
         assert self.pool
         self.logger.debug(f"Execute: ```{sql}````")
         async with self.pool.acquire() as conn:
-            result = await conn.execute(sql)
+            result = await conn.execute(sql, *params)
             self.logger.debug(f"Result ```{result}````")
-        return result
+            return result
 
-    async def fetch(self, sql: str) -> typing.List[Record]:
+    async def fetch(self, sql: str, *params: typing.Any) -> typing.List[Record]:
         assert self.pool
         self.logger.debug(f"Fetch: ```{sql}````")
         async with self.pool.acquire() as conn:
-            result = await conn.fetch(sql)
+            result = await conn.fetch(sql, *params)
             self.logger.debug(f"Result ```{result}````")
 
         if not result:
             raise exceptions.NotFound("Not found in PG!")
         return result
 
-    async def insert(self, table: str, data: typing.Dict[str, Field]) -> int:
-        keys = data.keys()
-        values = data.values()
-        sql = self.INSERT_SQL.format(
+    async def insert(self, table: str, data: typing.Dict[str, typing.Any]) -> int:
+        sql = "INSERT INTO {table:s} ({keys:}) VALUES ({values:}) RETURNING id;".format(
             table=table,
-            columns=", ".join(list(keys)),
-            values=", ".join([f"{self.parse(value)}" for value in values]),
+            keys=", ".join(list(data)),
+            values=", ".join([f"${i + 1}" for i in range(len(data))]),
         )
-        return (await self.fetch(sql))[0]["id"]
+        return (await self.fetch(sql, *data.values()))[0]["id"]
 
     async def upsert(
-        self, table: str, data: typing.Dict[str, Field], upsert_columns: str
+        self, table: str, data: typing.Dict[str, typing.Any], upsert_columns: str
     ) -> None:
-        keys = data.keys()
-        values = data.values()
-        sql = self.UPSERT_SQL.format(
+        numbsers = self.numbsers()
+        sql = "INSERT INTO {table:s} ({columns:s}) VALUES ({values:s}) ON CONFLICT ({upsert_columns:s}) DO UPDATE set {pairs:s};".format(
             table=table,
-            columns=", ".join(list(keys)),
-            values=", ".join([f"{self.parse(value)}" for value in values]),
+            columns=", ".join(list(data)),
+            values=", ".join([f"${next(numbsers)}" for _ in data]),
             upsert_columns=upsert_columns,
-            pairs=", ".join(f"{k}={self.parse(v)}" for k, v in data.items()),
+            pairs=", ".join(f"{k}=${next(numbsers)}" for k in data),
         )
-        await self.execute(sql)
+        await self.execute(sql, *data.values(), *data.values())
 
-    async def update(
-        self, table: str, data: typing.Dict[str, Field], **condition: Field
-    ):
-        sql = self.UPDATE_SQL.format(
+    async def update(self, table: str, data: typing.Dict[str, typing.Any], **condition):
+        numbsers = self.numbsers()
+        sql = "UPDATE {table} SET {data:s} WHERE {condition:s};".format(
             table=table,
-            data=", ".join((f"{k}={self.__class__.parse(v)}" for k, v in data.items())),
-            condition=", ".join(
-                (f"{k}={self.__class__.parse(v)}" for k, v in condition.items())
-            ),
+            data=", ".join((f"{k}=${next(numbsers)}" for k in data.keys())),
+            condition=", ".join((f"{k}=${next(numbsers)}" for k in condition.keys())),
         )
-        await self.execute(sql)
+        await self.execute(sql, *data.values(), *condition.values())
 
     async def create_table(self, name, define):
         await self.execute(define)
-        await self.execute(self.UPDATE_ROW_UPDATED_AT_TRIGGER.format(table=name))
+        await self.execute(
+            f"CREATE TRIGGER update_row_updated_at BEFORE UPDATE ON {name} FOR EACH ROW EXECUTE PROCEDURE  update_row_updated_at();"
+        )
