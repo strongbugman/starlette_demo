@@ -9,6 +9,11 @@ def test_schema(app: Starlette):
     validate_v3_spec(starchart.schema_generator.get_schema(app.routes))
 
 
+def test_health(client: TestClient):
+    res = client.get("/health/")
+    assert res.status_code == 200
+
+
 def test_cat(client: TestClient, db, cache):
     # create
     data = dict(name="丁丁", age=1)

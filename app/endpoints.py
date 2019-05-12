@@ -7,6 +7,19 @@ from .extensions import starchart
 from . import utils
 
 
+class Health(HTTPEndpoint):
+    def get(self, req: Request):
+        """
+        summary: Service health
+        tags:
+        - health
+        responses:
+          "200":
+            description: OK
+        """
+        return Response("OK")
+
+
 class Cat(HTTPEndpoint):
     async def get(self, req: Request):
         """
