@@ -1,0 +1,13 @@
+dist: xenial
+language: python
+python:
+- '3.7'
+services:
+- docker
+before_install:
+- sudo /etc/init.d/mysql stop
+- make prepare_test_env
+script: make test
+after_success:
+- make destroy_test_env
+- codecov

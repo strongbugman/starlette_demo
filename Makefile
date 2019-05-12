@@ -7,6 +7,8 @@ prepare_test_env:
 	sleep 5
 	docker exec -ti test_postgres su postgres -c "createdb startlette_demo_test"
 	docker exec -ti test_postgres su postgres -c "createdb startlette_demo"
+	pip install -U -r requirements.txt
+	pip install -U -r test_requirements.txt
 
 test:
 	black . --check
