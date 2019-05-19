@@ -10,7 +10,7 @@ class Extension:
         self.app: typing.Optional[Starlette] = None
         self.logger: logging.Logger = logging.getLogger(self.__class__.__name__)
 
-    def register(self, app: Starlette):
+    def init_app(self, app: Starlette):
         self.app = app
         app.add_event_handler("startup", self._startup)
         app.add_event_handler("shutdown", self._shutdown)

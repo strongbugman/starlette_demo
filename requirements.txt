@@ -1,4 +1,5 @@
 starlette
+apiman
 sentry-asgi
 uvicorn
 click
@@ -9,7 +10,6 @@ aio-pika
 ipython
 pyyaml
 jinja2
-starchart
 pydantic
 ujson
 msgpack

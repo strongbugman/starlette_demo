@@ -38,7 +38,7 @@ def create_app():
     app.routes.extend(ROUTES)
 
     for ext in EXTENSIONS:
-        ext.register(app)
+        ext.init_app(app)
 
     for handler in HANDLERS:
         app.add_exception_handler(handler.EXC, handler.handle)

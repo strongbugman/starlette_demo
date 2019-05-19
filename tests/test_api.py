@@ -2,11 +2,11 @@ from starlette.testclient import TestClient
 from starlette.applications import Starlette
 from openapi_spec_validator import validate_v3_spec
 
-from app.extensions import starchart
+from app.extensions import apiman
 
 
 def test_schema(app: Starlette):
-    validate_v3_spec(starchart.schema_generator.get_schema(app.routes))
+    validate_v3_spec(apiman.specification)
 
 
 def test_health(client: TestClient):

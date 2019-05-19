@@ -3,7 +3,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 from . import models as m
-from .extensions import starchart
+from .extensions import apiman
 from . import utils
 
 
@@ -144,7 +144,7 @@ class Cats(HTTPEndpoint):
             {"objects": [cat.dict() for cat in cats], "page": page, "count": len(cats)}
         )
 
-    @starchart.schema_generator.schema_from("./docs/cats_post.yml")
+    @apiman.from_file("./docs/cats_post.yml")
     async def post(self, req: Request):
         data = await utils.get_json(req)
 

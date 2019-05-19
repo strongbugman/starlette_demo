@@ -111,8 +111,8 @@ MODELS = {Cat}
 
 
 for m_cls in MODELS:
-    exts.starchart.schema_generator.add_schema(m_cls.__name__, m_cls.schema())
-    exts.starchart.schema_generator.add_schema(
+    exts.apiman.add_schema(m_cls.__name__, m_cls.schema())
+    exts.apiman.add_schema(
         f"{m_cls.__name__}s",
         {
             "type": "object",
