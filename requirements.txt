@@ -6,11 +6,8 @@ click
 aioredis
 aiocache
 asyncpg
-aio-pika
 ipython
 pyyaml
 jinja2
 pydantic
 ujson
-msgpack
-ant_nest

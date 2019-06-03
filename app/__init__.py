@@ -1,5 +1,3 @@
-from importlib import import_module
-
 from starlette.applications import Starlette as _Starlette
 
 import settings
@@ -42,7 +40,5 @@ def create_app():
 
     for handler in HANDLERS:
         app.add_exception_handler(handler.EXC, handler.handle)
-
-    import_module("app.tasks")
 
     return app

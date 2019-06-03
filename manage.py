@@ -11,7 +11,7 @@ from IPython import embed
 
 from app import create_app
 from app import models as m
-from app.extensions import db, task
+from app.extensions import db
 
 
 app = create_app()
@@ -49,20 +49,6 @@ def shell():
 @click.option("--port", default=8000)
 def run(port):
     _run(app, port=port)
-
-
-@cmd
-def task_consume():
-    with app_life():
-
-        def _close():
-            task.closed = True
-
-        loop = asyncio.get_event_loop()
-        loop.add_signal_handler(signal.SIGINT, _close)
-        loop.add_signal_handler(signal.SIGTERM, _close)
-        print("Consuming tasks...")
-        loop.run_until_complete(task.consume_all())
 
 
 @cmd
