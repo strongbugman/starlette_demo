@@ -6,14 +6,14 @@ import typing
 DEBUG = os.getenv("DEBUG", "")
 ENV = os.getenv("APP_ENV", "development")
 
-PROJECT_NAME = "startlette_demo"
+PROJECT_NAME = "{{cookiecutter.app_name}}"
 if ENV == "testing":
     PROJECT_NAME += "_test"
     logging.basicConfig(level=logging.DEBUG)
 else:
     logging.basicConfig(level=logging.WARNING)
 
-APIMAN = {"title": "Starlette demo API manual"}
+APIMAN = {"title": "{{cookiecutter.name}} API manual"}
 DSN = ""
 DB_URL = "postgres://postgres:letmein@localhost:5432/" + PROJECT_NAME
 REDIS_URL = "redis://localhost"
