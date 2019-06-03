@@ -8,7 +8,7 @@ from .base import Extension
 from .. import exceptions
 
 
-class DBExtension(Extension):
+class PostgresExtension(Extension):
     pool: typing.Optional[Pool]
 
     async def startup(self):

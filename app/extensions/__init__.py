@@ -4,11 +4,11 @@ from apiman.starlette import Extension as Apiman
 
 import settings
 from .base import Extension
-from .database import DBExtension
+from .database import PostgresExtension
 from .cache import CacheExtension
 from .redis import RedisExtension
 
-db = DBExtension()
+db = PostgresExtension()
 cache = CacheExtension()
 redis = RedisExtension()
 apiman = Apiman("./docs/template.yml", **settings.APIMAN)

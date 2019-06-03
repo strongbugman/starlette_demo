@@ -2,9 +2,7 @@ from starlette.endpoints import HTTPEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
 
-from . import models as m
-from .extensions import apiman
-from . import utils
+from . import models as m, extensions as exts, utils
 
 
 class Health(HTTPEndpoint):
@@ -43,6 +41,7 @@ class Cat(HTTPEndpoint):
             description: Not found
        """
         cat = await m.Cat.get(utils.parse_id(req.query_params.get("id")))
+        await exts.redis.incr(f"cat_{cat.name}_visit_count")
         return utils.JSONResponse(cat.dict())
 
     async def put(self, req: Request):
@@ -144,7 +143,7 @@ class Cats(HTTPEndpoint):
             {"objects": [cat.dict() for cat in cats], "page": page, "count": len(cats)}
         )
 
-    @apiman.from_file("./docs/cats_post.yml")
+    @exts.apiman.from_file("./docs/cats_post.yml")
     async def post(self, req: Request):
         data = await utils.get_json(req)
 
